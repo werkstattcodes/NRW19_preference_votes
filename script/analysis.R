@@ -71,10 +71,10 @@ df_state_region_long <- df_state_region %>%
   rename(
     name = familien_vorname,
     pref_votes_abs = vorz_stimm,
-    district_type=district_type,
-    district=district,
-    rank_list=reihung,
-    birth_year=geb_jahr,
+    district_type = district_type,
+    district = district,
+    rank_list = reihung,
+    birth_year = geb_jahr,
   ) %>%
   ungroup()
 
@@ -246,7 +246,7 @@ df %>%
   filter(name %in% top_candidates$name) %>%
   filter(!str_detect(district, "Gesamt")) %>%
   group_by(party3, name, district_type) %>%
-  summarise(sum_candiate = sum(pref_votes_abs, na.rm = T)) %>% #rename sum_candidate
+  summarise(sum_candiate = sum(pref_votes_abs, na.rm = T)) %>% # rename sum_candidate
   group_by(party3) %>%
   arrange(desc(sum_candiate), .by_group = T) %>%
   ungroup() %>%
@@ -272,8 +272,8 @@ df %>%
       label = scales::comma(preferences_candidate, accuracy = 1)
     ),
     stat = "identity",
-    family="Roboto Condensed",
-    color="grey30",
+    family = "Roboto Condensed",
+    color = "grey30",
     hjust = 1,
     group = name
   ) +
@@ -290,9 +290,12 @@ df %>%
     minor_breaks = NULL
   ) +
   scale_fill_paletteer_d("ggsci::default_jama",
-                         labels=c("Regionalwahlkreis"="Regional lists",
-                                  "Landeswahlkreis"="State lists",
-                                  "Bundeswahlkreis"="Federal list")) +
+    labels = c(
+      "Regionalwahlkreis" = "Regional lists",
+      "Landeswahlkreis" = "State lists",
+      "Bundeswahlkreis" = "Federal list"
+    )
+  ) +
   facet_wrap(vars(party3),
     ncol = 2,
     scale = "free_y"
@@ -303,14 +306,14 @@ df %>%
     panel.grid.major.y = element_blank(),
     panel.spacing.x = unit(0, units = "cm"),
     axis.title.y = element_blank(),
-    plot.caption = element_markdown(color = "grey30", hjust=c(0, 1)),
+    plot.caption = element_markdown(color = "grey30", hjust = c(0, 1)),
     legend.title = element_blank(),
     legend.position = "bottom",
     legend.key.size = unit(0.4, units = c("cm")),
     legend.justification = "right",
     plot.title = element_text(size = 13),
     plot.title.position = "plot",
-    plot.margin = margin(0, unit="cm"),
+    plot.margin = margin(0, unit = "cm"),
     # axis.text.y = element_text(face=x),
     strip.text = element_text(face = "bold")
   ) +
@@ -323,14 +326,15 @@ time <- Sys.Date()
 folder <- paste0(wdr, "/graphs/")
 width <- 26.49
 height <- 20
-ggsave(filename = paste0(folder, time, name, format),
-       device = "png",
-       dpi=96,
-       type = "cairo",
-       height = height,
-       width = width,
-       scale = 1,
-       unit = c("cm")
+ggsave(
+  filename = paste0(folder, time, name, format),
+  device = "png",
+  dpi = 96,
+  type = "cairo",
+  height = height,
+  width = width,
+  scale = 1,
+  unit = c("cm")
 )
 
 
@@ -382,7 +386,7 @@ df_rank_diff <- df %>%
   mutate(rank_votes = row_number()) %>%
   mutate(rank_diff = rank_list - rank_votes) %>%
   select(district_type, district, party3, name, pref_votes_abs, rank_list, rank_votes, rank_diff) %>%
-  arrange(desc(rank_diff)) 
+  arrange(desc(rank_diff))
 
 df_rank_diff_long <- rank_diff %>%
   filter(party3 %in% main_parties) %>%
@@ -392,7 +396,7 @@ df_rank_diff_long <- rank_diff %>%
     names_to = "ranking_type"
   )
 
-# df_rank_diff_long %>% 
+# df_rank_diff_long %>%
 #   ggplot() +
 #   geom_point(aes(
 #     x = fct_rev(ranking_type),
@@ -401,7 +405,7 @@ df_rank_diff_long <- rank_diff %>%
 #     color = party3
 #   )) +
 #   geom_line(aes(
-#     x = fct_rev(ranking_type), 
+#     x = fct_rev(ranking_type),
 #     y = rank_no,
 #     group = name,
 #     color = party3
@@ -424,67 +428,70 @@ df_list <- df %>%
   filter(!(district_type == "Bundeswahlkreis" & district != "Gesamt")) %>%
   group_by(district_type) %>%
   summarise(district_type_votes = sum(pref_votes_abs, na.rm = T)) %>%
-#  arrange(desc(district_type_votes)) %>%
-  mutate(district_type = forcats::fct_relevel(district_type, "Regionalwahlkreis","Landeswahlkreis","Bundeswahlkreis")) %>% 
+  #  arrange(desc(district_type_votes)) %>%
+  mutate(district_type = forcats::fct_relevel(district_type, "Regionalwahlkreis", "Landeswahlkreis", "Bundeswahlkreis")) %>%
   mutate(district_type_votes_cum = cumsum(district_type_votes)) %>%
-  mutate(district_type_votes_perc = district_type_votes / sum(district_type_votes)) %>% 
-  mutate(district_type = forcats::fct_reorder(district_type, district_type_votes_cum, .desc=F))
+  mutate(district_type_votes_perc = district_type_votes / sum(district_type_votes)) %>%
+  mutate(district_type = forcats::fct_reorder(district_type, district_type_votes_cum, .desc = F))
 
 
 df_list
 levels(df_list$district_type)
-  
-df_list %>% 
+
+df_list %>%
   ggplot() +
-      geom_bar(aes(
-        x = 1,
-        y = district_type_votes,
-        fill = district_type,
-        group=district_type
-      ),
-      stat = "identity"
-      ) +
-      geom_text(aes(
-        x = 1,
-        y = district_type_votes,
-        group=district_type,
-        label = paste(scales::comma(district_type_votes),
-          scales::percent(district_type_votes_perc),
-          sep = "\n"
-        )
-      ),
-      colour="white",
-      position = position_stack(vjust = .5, reverse = F)
-      ) +
-      scale_y_continuous(
-        expand = expansion(mult = c(0, 0)),
-        breaks = max(df_list$district_type_votes_cum),
-        label = scales::comma(max(df_list$district_type_votes_cum))
-      ) +
-      scale_fill_paletteer_d("ggsci::default_jama",
-                             labels=c("Regionalwahlkreis"="Regional lists",
-                                           "Landeswahlkreis"="State lists",
-                                           "Bundeswahlkreis"="Federal list")) +
-      labs(
-        title = "Total number of preference votes per electoral district",
-        caption = my_caption_2,
-        y = "number of preference votes"
-      ) +
-      hrbrthemes::theme_ipsum_tw() +
-      theme(
-        legend.position = "bottom",
-        legend.justification = "right",
-        plot.title.position = "plot",
-        legend.title = element_blank(),
-        axis.text.y = element_blank(),
-        axis.title.y = element_blank(),
-        plot.title = element_text(size = 13),
-        panel.grid = element_blank(),
-        plot.caption = element_markdown(hjust=c(0, 1), color="grey30"),
-        plot.margin=margin(t=0, l=0, b=0, r=1, unit="cm")
-      ) +
-      coord_flip() +
-      guides(fill = guide_legend(reverse = T))
+  geom_bar(aes(
+    x = 1,
+    y = district_type_votes,
+    fill = district_type,
+    group = district_type
+  ),
+  stat = "identity"
+  ) +
+  geom_text(aes(
+    x = 1,
+    y = district_type_votes,
+    group = district_type,
+    label = paste(scales::comma(district_type_votes),
+      scales::percent(district_type_votes_perc),
+      sep = "\n"
+    )
+  ),
+  colour = "white",
+  position = position_stack(vjust = .5, reverse = F)
+  ) +
+  scale_y_continuous(
+    expand = expansion(mult = c(0, 0)),
+    breaks = max(df_list$district_type_votes_cum),
+    label = scales::comma(max(df_list$district_type_votes_cum))
+  ) +
+  scale_fill_paletteer_d("ggsci::default_jama",
+    labels = c(
+      "Regionalwahlkreis" = "Regional lists",
+      "Landeswahlkreis" = "State lists",
+      "Bundeswahlkreis" = "Federal list"
+    )
+  ) +
+  labs(
+    title = "Total number of preference votes per electoral district",
+    caption = my_caption_2,
+    y = "number of preference votes"
+  ) +
+  hrbrthemes::theme_ipsum_tw() +
+  theme(
+    legend.position = "bottom",
+    legend.justification = "right",
+    plot.title.position = "plot",
+    legend.title = element_blank(),
+    axis.text.y = element_blank(),
+    axis.title.y = element_blank(),
+    plot.title = element_text(size = 13),
+    panel.grid = element_blank(),
+    plot.caption = element_markdown(hjust = c(0, 1), color = "grey30"),
+    plot.margin = margin(t = 0, l = 0, b = 0, r = 1, unit = "cm")
+  ) +
+  coord_flip() +
+  guides(fill = guide_legend(reverse = T))
 
 
 name <- "Total_preferences_per_district"
@@ -493,10 +500,10 @@ time <- Sys.Date()
 folder <- paste0(wdr, "/graphs/")
 width <- 26.49
 height <- 7
-ggsave(#plot=plot_n_candidates_crossing_threshold,
+ggsave( # plot=plot_n_candidates_crossing_threshold,
   filename = paste0(folder, time, name, format),
   device = "png",
-  dpi=96,
+  dpi = 96,
   type = "cairo",
   height = height,
   width = width,
@@ -518,7 +525,7 @@ x <- df %>%
 
 
 x %>%
-  filter(party3!="Other") %>% 
+  filter(party3 != "Other") %>%
   ggplot() +
   geom_bar(aes(
     x = party3,
@@ -545,9 +552,12 @@ x %>%
   ) +
   hrbrthemes::theme_ipsum_rc() +
   scale_fill_paletteer_d("ggsci::default_jama",
-                         labels=c("Regionalwahlkreis"="Regional lists",
-                                  "Landeswahlkreis"="State lists",
-                                  "Bundeswahlkreis"="Federal list")) +
+    labels = c(
+      "Regionalwahlkreis" = "Regional lists",
+      "Landeswahlkreis" = "State lists",
+      "Bundeswahlkreis" = "Federal list"
+    )
+  ) +
   scale_y_continuous(
     labels = scales::percent,
     expand = expansion(mult = c(0, 0))
@@ -559,11 +569,11 @@ x %>%
     legend.justification = "right",
     axis.title = element_blank(),
     legend.position = "bottom",
-    plot.title = element_text(size=13),
+    plot.title = element_text(size = 13),
     plot.title.position = "plot",
-    plot.margin=margin(0, unit="cm"),
-    plot.caption=element_markdown(hjust=c(0, 1), color="grey30")
-  )+
+    plot.margin = margin(0, unit = "cm"),
+    plot.caption = element_markdown(hjust = c(0, 1), color = "grey30")
+  ) +
   guides(fill = guide_legend(reverse = T))
 
 
@@ -573,14 +583,15 @@ time <- Sys.Date()
 folder <- paste0(wdr, "/graphs/")
 width <- 26.49
 height <- 11.17
-ggsave(filename = paste0(folder, time, name, format),
-       device = "png",
-       dpi=96,
-       type = "cairo",
-       height = height,
-       width = width,
-       scale = 1,
-       unit = c("cm")
+ggsave(
+  filename = paste0(folder, time, name, format),
+  device = "png",
+  dpi = 96,
+  type = "cairo",
+  height = height,
+  width = width,
+  scale = 1,
+  unit = c("cm")
 )
 
 
@@ -601,7 +612,7 @@ nrw19_imp <- readr::read_csv2(
 
 nrw19 <- nrw19_imp %>%
   mutate(state = str_sub(gkz, 2, 2)) %>%
-  mutate(district_pol = str_sub(gkz, 3, 4)) %>% #Bezirk 
+  mutate(district_pol = str_sub(gkz, 3, 4)) %>% # Bezirk
   mutate(municipality = str_sub(gkz, 5, 6)) %>%
   mutate(level = case_when(
     str_sub(gkz, 2, 2) == 0 ~ "gesamt",
@@ -615,10 +626,12 @@ nrw19 <- nrw19_imp %>%
   mutate(wahlkarten = case_when(
     str_detect(gkz, regex("99$")) ~ "ja",
     TRUE ~ as.character("nein")
-  ))  %>%
-select(level, district_name=gebietsname, gkz,  electorate_size=wahlberechtigte,
-       votes_mail=wahlkarten, state, votes_casted=abgegebene, district_pol, 
-       municipality, everything())
+  )) %>%
+  select(level,
+    district_name = gebietsname, gkz, electorate_size = wahlberechtigte,
+    votes_mail = wahlkarten, state, votes_casted = abgegebene, district_pol,
+    municipality, everything()
+  )
 
 
 nrw19_bezirk <- nrw19 %>%
@@ -652,7 +665,7 @@ results_federal_list_long <- results_federal_list %>%
 results_state_list <- nrw19 %>%
   filter(level == "Bundesland") %>%
   group_by(state) %>%
-  summarise_if(is.numeric, sum, na.rm=T) %>%
+  summarise_if(is.numeric, sum, na.rm = T) %>%
   mutate(district_name = case_when(
     state == 1 ~ "Burgenland",
     state == 2 ~ "Kärnten",
@@ -686,14 +699,17 @@ n_mandates_regional_districts <- MoI_url %>%
   html_table() %>%
   map_df(., bind_rows)
 
-#from utils package; allows Umlaute when exporting
+# from utils package; allows Umlaute when exporting
 write.csv2(n_mandates_regional_districts,
-           file=paste0(wdr, "/data/n_mandates_regional_districts.csv"),
-           row.names = F,
-           fileEncoding ="latin1")
+  file = paste0(wdr, "/data/n_mandates_regional_districts.csv"),
+  row.names = F,
+  fileEncoding = "latin1"
+)
 
-n_mandates_regional_districts <- read_csv2(file=paste0(wdr, "/data/n_mandates_regional_districts.csv"),
-           locale=locale(encoding="latin1")) 
+n_mandates_regional_districts <- read_csv2(
+  file = paste0(wdr, "/data/n_mandates_regional_districts.csv"),
+  locale = locale(encoding = "latin1")
+)
 
 
 n_mandates_landeswahlkreis <- n_mandates_regional_districts %>%
@@ -701,13 +717,15 @@ n_mandates_landeswahlkreis <- n_mandates_regional_districts %>%
   group_by(state) %>%
   summarise(n_mandates = sum(Mandate))
 
-info_constituencies <-  dplyr::bind_rows(
-  n_mandates_regional_districts %>% 
-    select(-Stimmbezirke) %>% 
-    rename(district=Regionalwahlkreis,
-         district_name=Bezeichnung,
-         n_mandates=Mandate),
-  n_mandates_landeswahlkreis %>% 
+info_constituencies <- dplyr::bind_rows(
+  n_mandates_regional_districts %>%
+    select(-Stimmbezirke) %>%
+    rename(
+      district = Regionalwahlkreis,
+      district_name = Bezeichnung,
+      n_mandates = Mandate
+    ),
+  n_mandates_landeswahlkreis %>%
     mutate(district = case_when(
       state == "1" ~ "Burgenland",
       state == "2" ~ "Kärnten",
@@ -718,18 +736,20 @@ info_constituencies <-  dplyr::bind_rows(
       state == "7" ~ "Tirol",
       state == "8" ~ "Vorarlberg",
       state == "9" ~ "Wien",
-      TRUE ~ NA_character_)) %>% 
-  mutate(district_name=district)) %>% 
-  mutate(district_name_short=str_replace(district_name, "Burgenland", "Bgld") %>% 
-           str_replace(., "Kärnten","Ktn") %>% 
-           str_replace(., "Niederösterreich", "NÖ") %>% 
-           str_replace(., "Salzburg", "Sbg") %>% 
-           str_replace(., "steiermark", "Stmk") %>% 
-           str_replace(., "Innsbruck", "Ibk") %>% 
-           str_replace(., "Vorarlberg","Vbg") %>% 
-           str_replace(., "\\sund\\s", " u ")) %>% 
-  select(., -state) %>% 
-  bind_rows(., data.frame(district="Gesamt", district_name="Gesamt", n_mandates=183, district_name_short="Gesamt"))
+      TRUE ~ NA_character_
+    )) %>%
+    mutate(district_name = district)
+) %>%
+  mutate(district_name_short = str_replace(district_name, "Burgenland", "Bgld") %>%
+    str_replace(., "Kärnten", "Ktn") %>%
+    str_replace(., "Niederösterreich", "NÖ") %>%
+    str_replace(., "Salzburg", "Sbg") %>%
+    str_replace(., "steiermark", "Stmk") %>%
+    str_replace(., "Innsbruck", "Ibk") %>%
+    str_replace(., "Vorarlberg", "Vbg") %>%
+    str_replace(., "\\sund\\s", " u ")) %>%
+  select(., -state) %>%
+  bind_rows(., data.frame(district = "Gesamt", district_name = "Gesamt", n_mandates = 183, district_name_short = "Gesamt"))
 
 # >> get 'electoral number' --------------------------------------------------
 
@@ -900,7 +920,7 @@ u %>%
     space = "free",
     switch = "y"
   ) +
-    hrbrthemes::theme_ipsum_rc() +
+  hrbrthemes::theme_ipsum_rc() +
   theme(
     axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0),
     legend.position = "none",
@@ -976,8 +996,10 @@ u %>%
   hrbrthemes::theme_ipsum_rc() +
   theme(
     panel.grid.major.x = element_blank(),
-    plot.caption = element_markdown(color = "grey30", 
-                                    hjust=c(0, 1)),
+    plot.caption = element_markdown(
+      color = "grey30",
+      hjust = c(0, 1)
+    ),
     axis.title.x = element_blank()
   )
 
@@ -1034,11 +1056,13 @@ plot_region <- u %>%
     x = state,
     color = party3,
     y = preference_share,
-    data_id=district_name,
-    tooltip=paste(party3,
-                  district_name,
-                  round(preference_share*100, 2),
-                  "%")
+    data_id = district_name,
+    tooltip = paste(
+      party3,
+      district_name,
+      round(preference_share * 100, 2),
+      "%"
+    )
   ),
   position = pos
   ) +
@@ -1057,27 +1081,37 @@ plot_region <- u %>%
     plot.title = element_text(size = 12),
     plot.subtitle = element_text(size = 12, color = "grey30"),
     plot.title.position = "plot",
-    plot.caption = element_markdown(color = "grey30",
-                                    hjust = c(0, 1)),
+    plot.caption = element_markdown(
+      color = "grey30",
+      hjust = c(0, 1)
+    ),
     plot.margin = margin(0, unit = "cm"),
     axis.title.x = element_blank()
   )
 
-my_plot <- girafe(code = print(plot_region), 
-                  width_svg=10,
-                  height_svg= 6,
-                  options = list(opts_toolbar(saveaspng = FALSE),
-                                 opts_sizing(rescale=T),
-                                 opts_tooltip(css="background-color:lightgray;	
-                                              font-family:Roboto Condensed;")))
+my_plot <- girafe(
+  code = print(plot_region),
+  width_svg = 10,
+  height_svg = 6,
+  options = list(
+    opts_toolbar(saveaspng = FALSE),
+    opts_sizing(rescale = T),
+    opts_tooltip(css = "background-color:lightgray;	
+                                              font-family:Roboto Condensed;")
+  )
+)
 my_plot
 
-x <- girafe_options(x = my_plot,
-                    sizingPolicy(padding = "0px"))
+x <- girafe_options(
+  x = my_plot,
+  sizingPolicy(padding = "0px")
+)
 
-saveWidget(x, file="party_prefence_share_by_state.html",
-           selfcontained = T,
-           background = "white")
+saveWidget(x,
+  file = "party_prefence_share_by_state.html",
+  selfcontained = T,
+  background = "white"
+)
 
 
 name <- "party_prefence_share_by_state"
@@ -1101,13 +1135,13 @@ ggsave(
 
 pos <- position_jitter(width = 0.2, height = 0, seed = 1) # define seed for positioning
 
-constituencies_annotation <- info_constituencies %>% 
-  select(district, n_mandates, district_name_short) %>% 
-  filter(str_detect(district, "^[0-9]")) %>% 
-  group_by(n_mandates) %>% 
-  summarise(gebiete=paste0(district_name_short, collapse=", ")) %>% 
+constituencies_annotation <- info_constituencies %>%
+  select(district, n_mandates, district_name_short) %>%
+  filter(str_detect(district, "^[0-9]")) %>%
+  group_by(n_mandates) %>%
+  summarise(gebiete = paste0(district_name_short, collapse = ", ")) %>%
   mutate(n_mandates = as_factor(n_mandates))
-  
+
 plot_n_mandates <- u %>%
   mutate(n_mandates = as_factor(n_mandates) %>% fct_rev()) %>%
   group_by(n_mandates) %>%
@@ -1137,23 +1171,29 @@ plot_n_mandates <- u %>%
     x = n_mandates,
     color = party3,
     y = preference_share,
-  data_id=party3,
-  tooltip=paste0(district_name,"\n", party3, ": ", round(preference_share*100, 2), " %")
+    data_id = party3,
+    tooltip = paste0(district_name, "\n", party3, ": ", round(preference_share * 100, 2), " %")
   ),
   position = pos
   ) +
-  geom_rect(ymin=.8, ymax=Inf,
-            xmin=0, xmax=Inf,
-            fill="white")+
-  geom_text(data=constituencies_annotation,
-            aes(y=.75,
-                x=n_mandates,
-                label=str_wrap(gebiete, width = 40)),
-            hjust=0,
-            family="Roboto Condensed",
-            nudge_x=0.5,
-            lineheight=0.8,
-            size=3.5)+
+  geom_rect(
+    ymin = .8, ymax = Inf,
+    xmin = 0, xmax = Inf,
+    fill = "white"
+  ) +
+  geom_text(
+    data = constituencies_annotation,
+    aes(
+      y = .75,
+      x = n_mandates,
+      label = str_wrap(gebiete, width = 40)
+    ),
+    hjust = 0,
+    family = "Roboto Condensed",
+    nudge_x = 0.5,
+    lineheight = 0.8,
+    size = 3.5
+  ) +
   scale_y_continuous(
     labels = scales::percent_format(accuracy = 1),
     limits = c(0, 1),
@@ -1162,41 +1202,55 @@ plot_n_mandates <- u %>%
   scale_color_manual(values = party_colors) +
   hrbrthemes::theme_ipsum_rc() +
   theme(
-    axis.text.y = element_text(size = 12, face="bold", 
-                               vjust=0,
-                               hjust=1), 
+    axis.text.y = element_text(
+      size = 12, face = "bold",
+      vjust = 0,
+      hjust = 1
+    ),
     panel.grid.major.x = element_blank(),
     panel.grid.major.y = element_blank(),
     legend.title = element_blank(),
     legend.position = "bottom",
     legend.justification = "right",
     plot.title = element_text(size = 12),
-    plot.subtitle = element_text(size = 12, color="grey30"),
-    plot.caption = element_markdown(color = "grey30",
-                                    hjust=c(0, 1)),
-    plot.margin = margin(0, unit="cm"),
+    plot.subtitle = element_text(size = 12, color = "grey30"),
+    plot.caption = element_markdown(
+      color = "grey30",
+      hjust = c(0, 1)
+    ),
+    plot.margin = margin(0, unit = "cm"),
     plot.title.position = "plot",
-    )+
+  ) +
   coord_flip()
 
 plot_n_mandates
 
-my_plot <- girafe(code = print(plot_n_mandates), 
-                  width_svg=10,
-                  height_svg=7 ,
-                  options = list(opts_toolbar(saveaspng = FALSE),
-                                 opts_sizing(rescale=T),
-                                 opts_tooltip(css="background-color:lightgray;	
-                                              font-family:Roboto Condensed;")))
+my_plot <- girafe(
+  code = print(plot_n_mandates),
+  width_svg = 10,
+  height_svg = 7,
+  options = list(
+    opts_toolbar(saveaspng = FALSE),
+    opts_sizing(rescale = T),
+    opts_tooltip(css = "background-color:lightgray;	
+                                              font-family:Roboto Condensed;")
+  )
+)
 my_plot
 
-x <- girafe_options(x = my_plot,
-                    sizingPolicy(padding = "0px",
-                                 defaultWidth = "1000px",
-                                 defaultHeight = "700px"))
+x <- girafe_options(
+  x = my_plot,
+  sizingPolicy(
+    padding = "0px",
+    defaultWidth = "1000px",
+    defaultHeight = "700px"
+  )
+)
 
-saveWidget(x, file="plot_interactive_n_mandates.html",
-           background = "white")
+saveWidget(x,
+  file = "plot_interactive_n_mandates.html",
+  background = "white"
+)
 
 
 # INCLUDED Candidate's preference votes share by list  ------------------------------------------
@@ -1209,26 +1263,27 @@ share <- df %>%
   arrange(desc(pref_votes_abs), .by_group = T) %>%
   mutate(index = row_number()) %>%
   mutate(sum_preference = sum(pref_votes_abs, na.rm = T)) %>%
-  ungroup() %>% 
-  mutate(share_pref=pref_votes_abs/sum_preference) %>% 
-  #filter(share_pref>0.05) %>%  #change later
-  left_join(., info_constituencies, 
-            by=c("district"))
-
-df_thresholds <- tibble::tribble(
-  ~threshold,              ~district_type,
-           .07,   "Bundeswahlkreis",
-          .10,   "Landeswahlkreis",
-          .14, "Regionalwahlkreis"
+  ungroup() %>%
+  mutate(share_pref = pref_votes_abs / sum_preference) %>%
+  # filter(share_pref>0.05) %>%  #change later
+  left_join(., info_constituencies,
+    by = c("district")
   )
 
-df_thresholds_2 <- crossing(df_thresholds, unique(share$party3)) %>% 
-  rename(party3=`unique(share$party3)`)
+df_thresholds <- tibble::tribble(
+  ~threshold, ~district_type,
+  .07, "Bundeswahlkreis",
+  .10, "Landeswahlkreis",
+  .14, "Regionalwahlkreis"
+)
 
-pos <- position_jitter(width=0, height=0.2, seed=2)
+df_thresholds_2 <- crossing(df_thresholds, unique(share$party3)) %>%
+  rename(party3 = `unique(share$party3)`)
 
-# plot_share <- share %>%   
-#   mutate(share_pref=share_pref*100) %>% 
+pos <- position_jitter(width = 0, height = 0.2, seed = 2)
+
+# plot_share <- share %>%
+#   mutate(share_pref=share_pref*100) %>%
 #   ggplot() +
 #   labs(
 #     title = "Top candidates with prefernce votes per constituency",
@@ -1282,10 +1337,10 @@ pos <- position_jitter(width=0, height=0.2, seed=2)
 #     axis.title.y = element_blank(),
 #     panel.spacing.x = unit(0.2, "cm"),
 #     panel.spacing.y = unit(0.2, "cm"),
-#     strip.text.x = element_text(angle = 0, 
+#     strip.text.x = element_text(angle = 0,
 #                                 vjust = 1,
 #                                 face="bold"),
-#     strip.text.y = element_text(angle = 180, 
+#     strip.text.y = element_text(angle = 180,
 #                                 vjust = 1,
 #                                 face="bold"),
 #     strip.placement = "outside",
@@ -1299,87 +1354,101 @@ pos <- position_jitter(width=0, height=0.2, seed=2)
 # > plot with patchwork ------------------------------------------------------
 
 
-df_share <- share %>%   
+df_share <- share %>%
   left_join(., df_thresholds_2,
-            by=c("party3", "district_type")) %>% 
-  mutate(share_pref=share_pref*100) %>% 
-  left_join(., electoral_number %>% 
-              select(district_name, electoral_number),
-            by=c("district"="district_name")) %>% 
-  mutate(electoral_number_indicator=case_when(pref_votes_abs > electoral_number ~ "yes",
-                                              TRUE ~ as.character("no"))) 
+    by = c("party3", "district_type")
+  ) %>%
+  mutate(share_pref = share_pref * 100) %>%
+  left_join(., electoral_number %>%
+    select(district_name, electoral_number),
+  by = c("district" = "district_name")
+  ) %>%
+  mutate(electoral_number_indicator = case_when(
+    pref_votes_abs > electoral_number ~ "yes",
+    TRUE ~ as.character("no")
+  ))
 
-plot_share <- df_share %>% 
-  filter(party3!="Other") %>% 
-group_split(district_type) %>% 
-  map(~ggplot(.) +
-  labs(
-    title = paste(unique(.$district_type)), 
-    subtitle = paste("Candidates securing preference votes more than
-                    <span style='color:orange'>", unique(.$threshold)*100, "</span> % of their party's overall vote in their respective constituency are re-ranked."),
-    x="Candidate's preference votes in % of party votes"
-  ) +
-  geom_point_interactive(aes(
-    y = district_name_short,
-    x = share_pref,
-   # shape = as_factor(electoral_number_indicator),
-    color=party3,
-    data_id=name_short,
-    tooltip=paste(name_short, round(share_pref, 2), sep="; ")
-  ),
-  position=position_jitter(width=0, height=0.2, seed=2),
-  stat = "identity"
-  ) +
-  geom_vline(aes(xintercept = threshold * 100),
-             color="orange")+
-  scale_y_discrete(expand=expansion(add=0.2))+
-  scale_x_continuous(
-    trans="log10",
-    limits = c(NA, 100),
-    labels = scales::label_percent(accuracy =1, scale =1),
-    minor_breaks = NULL,
-    breaks = c(NA, 0, 1, 25, 50, 100)
-  ) +
-  scale_color_manual(values=party_colors)+
-  ggforce::facet_row(vars(party3),
-                     space = "free",
-                     scale= "free_x",
-                     shrink = T)  +
-  hrbrthemes::theme_ipsum_rc() +
-  theme(
-    axis.text.x = element_text(angle = 90, hjust = 1, vjust=.5, size=9),
-    axis.title.y = element_blank(),
-    panel.spacing.x = unit(0.2, "cm"),
-    panel.spacing.y = unit(0.2, "cm"),
-    strip.text.x = element_text(angle = 0, 
-                                vjust = 1,
-                                face="bold"),
-    strip.text.y = element_text(angle = 180, 
-                                vjust = 1,
-                                face="bold"),
-    strip.placement = "outside",
-    plot.title = element_text(size=11, face="bold"),
-    plot.title.position = "plot",
-    plot.subtitle = element_markdown(size=11, color="grey30"),
-    legend.position = "bottom",
-    legend.title = element_blank(),
-    legend.justification = "right",
-    panel.grid.major.y = element_blank(),
-    plot.margin = margin(0, unit="cm")
-  )+
-  guides(color="none"))
+plot_share <- df_share %>%
+  filter(party3 != "Other") %>%
+  group_split(district_type) %>%
+  map(~ ggplot(.) +
+    labs(
+      title = paste(unique(.$district_type)),
+      subtitle = paste("Candidates securing preference votes more than
+                    <span style='color:orange'>", unique(.$threshold) * 100, "</span> % of their party's overall vote in their respective constituency are re-ranked."),
+      x = "Candidate's preference votes in % of party votes"
+    ) +
+    geom_point_interactive(aes(
+      y = district_name_short,
+      x = share_pref,
+      # shape = as_factor(electoral_number_indicator),
+      color = party3,
+      data_id = name_short,
+      tooltip = paste(name_short, round(share_pref, 2), sep = "; ")
+    ),
+    position = position_jitter(width = 0, height = 0.2, seed = 2),
+    stat = "identity"
+    ) +
+    geom_vline(aes(xintercept = threshold * 100),
+      color = "orange"
+    ) +
+    scale_y_discrete(expand = expansion(add = 0.2)) +
+    scale_x_continuous(
+      trans = "log10",
+      limits = c(NA, 100),
+      labels = scales::label_percent(accuracy = 1, scale = 1),
+      minor_breaks = NULL,
+      breaks = c(NA, 0, 1, 25, 50, 100)
+    ) +
+    scale_color_manual(values = party_colors) +
+    ggforce::facet_row(vars(party3),
+      space = "free",
+      scale = "free_x",
+      shrink = T
+    ) +
+    hrbrthemes::theme_ipsum_rc() +
+    theme(
+      axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5, size = 9),
+      axis.title.y = element_blank(),
+      panel.spacing.x = unit(0.2, "cm"),
+      panel.spacing.y = unit(0.2, "cm"),
+      strip.text.x = element_text(
+        angle = 0,
+        vjust = 1,
+        face = "bold"
+      ),
+      strip.text.y = element_text(
+        angle = 180,
+        vjust = 1,
+        face = "bold"
+      ),
+      strip.placement = "outside",
+      plot.title = element_text(size = 11, face = "bold"),
+      plot.title.position = "plot",
+      plot.subtitle = element_markdown(size = 11, color = "grey30"),
+      legend.position = "bottom",
+      legend.title = element_blank(),
+      legend.justification = "right",
+      panel.grid.major.y = element_blank(),
+      plot.margin = margin(0, unit = "cm")
+    ) +
+    guides(color = "none"))
 
 
-plot_share <- (patchwork::wrap_plots(plot_share, ncol=1) &
-  theme(plot.margin = margin(unit="cm", 0))) +
-  plot_annotation(title="Candidates' preference vote shares",
-                  subtitle = "Candidates above vertical line move up the ",
-                  caption=my_caption,
-                  theme=theme(plot.title = element_text(family="Roboto Condensed",
-                                                        size = 12,
-                                                        face = "bold")))+
+plot_share <- (patchwork::wrap_plots(plot_share, ncol = 1) &
+  theme(plot.margin = margin(unit = "cm", 0))) +
+  plot_annotation(
+    title = "Candidates' preference vote shares",
+    subtitle = "Candidates above vertical line move up the ",
+    caption = my_caption,
+    theme = theme(plot.title = element_text(
+      family = "Roboto Condensed",
+      size = 12,
+      face = "bold"
+    ))
+  ) +
   plot_layout(heights = c(1, 9, 39))
-  
+
 
 plot_share
 
@@ -1399,58 +1468,79 @@ ggsave(
   unit = c("cm")
 )
 
-my_plot <- girafe(code = print(plot_share), 
-                  width_svg=10,
-                  height_svg= 15,
-                  options = list(opts_toolbar(saveaspng = FALSE),
-                                 opts_sizing(rescale=T),
-                                 opts_tooltip(css="background-color:lightgray;	font-family:Roboto Condensed;")))
+my_plot <- girafe(
+  code = print(plot_share),
+  width_svg = 10,
+  height_svg = 15,
+  options = list(
+    opts_toolbar(saveaspng = FALSE),
+    opts_sizing(rescale = T),
+    opts_tooltip(css = "background-color:lightgray;	font-family:Roboto Condensed;")
+  )
+)
 my_plot
 
-x <- girafe_options(x = my_plot,
-                    sizingPolicy(padding = "0px",
-                                 defaultWidth = "100%",
-                                 defaultHeight = "100%"))
+x <- girafe_options(
+  x = my_plot,
+  sizingPolicy(
+    padding = "0px",
+    defaultWidth = "100%",
+    defaultHeight = "100%"
+  )
+)
 
-saveWidget(x, file="candidate_vote_share_by_list.html",
-           background = "white")
+saveWidget(x,
+  file = "candidate_vote_share_by_list.html",
+  background = "white"
+)
 
 
 
 # INCLUDED. Candidates crossing preference vote threshold -------------------------------------------
 
 
-plot_n_candidates_crossing_threshold <- df_share %>% 
-  select(district_type, district_name_short, party3, share_pref, threshold) %>% 
-  mutate(threshold_share=case_when(share_pref>threshold*100 ~ "yes",
-                                   TRUE ~ as.character("no"))) %>% 
-  group_by(district_type, party3, threshold_share) %>% 
-  summarise(n=n()) %>% 
-  filter(threshold_share=="yes") %>% 
-  ggplot()+
-  labs(title="Number of candidates corssing preference vote threshold",
-       caption=my_caption_2)+
-  geom_bar(aes(x=party3,
-               y=n,
-               fill=party3),
-           stat="identity")+
-  geom_text(aes(x=party3,
-                y=n,
-                label=n),
-            stat="identity",
-            nudge_y=5)+
-  scale_fill_manual(values=party_colors)+
-  facet_wrap(vars(district_type))+
-  hrbrthemes::theme_ipsum_rc()+
-  theme(legend.position = "none",
-        axis.title.y=element_blank(),
-        axis.title.x=element_blank(),
-        panel.grid.major.x = element_blank(),
-        plot.margin = margin(0, unit="cm"),
-        plot.title = element_text(size=12),
-        plot.title.position = "plot",
-        plot.caption = element_markdown(hjust = c(0,1))
-        )
+plot_n_candidates_crossing_threshold <- df_share %>%
+  select(district_type, district_name_short, party3, share_pref, threshold) %>%
+  mutate(threshold_share = case_when(
+    share_pref > threshold * 100 ~ "yes",
+    TRUE ~ as.character("no")
+  )) %>%
+  group_by(district_type, party3, threshold_share) %>%
+  summarise(n = n()) %>%
+  filter(threshold_share == "yes") %>%
+  ggplot() +
+  labs(
+    title = "Number of candidates corssing preference vote threshold",
+    caption = my_caption_2
+  ) +
+  geom_bar(aes(
+    x = party3,
+    y = n,
+    fill = party3
+  ),
+  stat = "identity"
+  ) +
+  geom_text(aes(
+    x = party3,
+    y = n,
+    label = n
+  ),
+  stat = "identity",
+  nudge_y = 5
+  ) +
+  scale_fill_manual(values = party_colors) +
+  facet_wrap(vars(district_type)) +
+  hrbrthemes::theme_ipsum_rc() +
+  theme(
+    legend.position = "none",
+    axis.title.y = element_blank(),
+    axis.title.x = element_blank(),
+    panel.grid.major.x = element_blank(),
+    plot.margin = margin(0, unit = "cm"),
+    plot.title = element_text(size = 12),
+    plot.title.position = "plot",
+    plot.caption = element_markdown(hjust = c(0, 1))
+  )
 
 plot_n_candidates_crossing_threshold
 
@@ -1460,10 +1550,11 @@ time <- Sys.Date()
 folder <- paste0(wdr, "/graphs/")
 width <- 26.49
 height <- 11.17
-ggsave(plot=plot_n_candidates_crossing_threshold,
+ggsave(
+  plot = plot_n_candidates_crossing_threshold,
   filename = paste0(folder, time, name, format),
   device = "png",
-  dpi=96,
+  dpi = 96,
   type = "cairo",
   height = height,
   width = width,
@@ -1478,84 +1569,105 @@ aut_grid <- data.frame(
   row = c(1, 1, 1, 2, 2, 2, 2, 2, 3),
   col = c(3, 4, 5, 1, 2, 3, 4, 5, 4),
   code = c("Oberösterreich", "Niederösterreich", "Wien", "Vorarlberg", "Tirol", "Salzburg", "Steiermark", "Burgenland", "Kärnten"),
-  name = c("Oberösterreich", "Niederösterreich", "Wien", "Vorarlberg", "Tirol", "Salzburg", "Steiermark", "Burgenland", "Kärnten"))
+  name = c("Oberösterreich", "Niederösterreich", "Wien", "Vorarlberg", "Tirol", "Salzburg", "Steiermark", "Burgenland", "Kärnten")
+)
 
 
 
 # > plot ------------------------------------------------------------------
 
 
-state_electoral_number<- df %>% 
-  filter(party3!="Other") %>% 
-  filter(district_type=="Landeswahlkreis") %>% 
-  left_join(., 
-            electoral_number %>% select(district_name, electoral_number),
-            by=c("district"="district_name")) %>% 
+state_electoral_number <- df %>%
+  filter(party3 != "Other") %>%
+  filter(district_type == "Landeswahlkreis") %>%
+  left_join(.,
+    electoral_number %>% select(district_name, electoral_number),
+    by = c("district" = "district_name")
+  ) %>%
   select(district_type, district, name_short, party3, electoral_number, pref_votes_abs)
 
-state_electoral_number_plot <- state_electoral_number %>% 
-ggplot()+
-  labs(title="Candidates' preference votes and electoral number",
-       caption=my_caption_2,
-       y="Preference votes")+
+state_electoral_number_plot <- state_electoral_number %>%
+  ggplot() +
+  labs(
+    title = "Candidates' preference votes and electoral number",
+    caption = my_caption_2,
+    y = "Preference votes"
+  ) +
   geom_point_interactive(aes(
-    x=party3,
-    color=party3,
-    y=pref_votes_abs,
-    tooltip=paste(party3, "\n",
-                  name_short, pref_votes_abs)),
-  position=position_jitter(width=0.2, height=NULL, seed=2)
-  )+
-  geom_hline(aes(yintercept=electoral_number),
-             color="orange")+
-  geom_text(aes(x=Inf, y=electoral_number,
-                label=scales::comma(electoral_number)),
-            color="orange",
-            nudge_y = -3000,
-            family= "Roboto Condensed",
-            hjust=1,
-            check_overlap = T)+
-  scale_color_manual(values=party_colors)+
-  scale_x_discrete(expand=expansion(mult=0))+
-  scale_y_continuous(labels = scales::label_comma(),
-                     expand=expansion(mult=0),
-                     limits=c(0, 35000),
-                     minor_breaks=NULL)+
+    x = party3,
+    color = party3,
+    y = pref_votes_abs,
+    tooltip = paste(
+      party3, "\n",
+      name_short, pref_votes_abs
+    )
+  ),
+  position = position_jitter(width = 0.2, height = NULL, seed = 2)
+  ) +
+  geom_hline(aes(yintercept = electoral_number),
+    color = "orange"
+  ) +
+  geom_text(aes(
+    x = Inf, y = electoral_number,
+    label = scales::comma(electoral_number)
+  ),
+  color = "orange",
+  nudge_y = -3000,
+  family = "Roboto Condensed",
+  hjust = 1,
+  check_overlap = T
+  ) +
+  scale_color_manual(values = party_colors) +
+  scale_x_discrete(expand = expansion(mult = 0)) +
+  scale_y_continuous(
+    labels = scales::label_comma(),
+    expand = expansion(mult = 0),
+    limits = c(0, 35000),
+    minor_breaks = NULL
+  ) +
   hrbrthemes::theme_ipsum_rc() +
   theme(
     axis.title.x = element_blank(),
-    axis.text.x = element_text(size=9),
+    axis.text.x = element_text(size = 9),
     panel.grid.major.x = element_blank(),
     strip.text.y = element_text(angle = 0, vjust = 1),
     legend.position = "none",
     plot.title = element_text(size = 12),
     plot.title.position = "plot",
-    plot.caption=element_markdown(hjust=c(0, 1), color="grey30"),
-    plot.margin=margin(0, r=0.2, unit="cm"),
-    strip.background.x = element_rect(fill="lightgrey"),
-    panel.border =  element_rect(color = "lightgrey", fill="transparent")
-  )+
-  facet_geo(~district, grid=aut_grid)+
-  guides(color="none")
+    plot.caption = element_markdown(hjust = c(0, 1), color = "grey30"),
+    plot.margin = margin(0, r = 0.2, unit = "cm"),
+    strip.background.x = element_rect(fill = "lightgrey"),
+    panel.border = element_rect(color = "lightgrey", fill = "transparent")
+  ) +
+  facet_geo(~district, grid = aut_grid) +
+  guides(color = "none")
 
 
 # > save ------------------------------------------------------------------
 
 state_electoral_number_plot
 
-my_plot <- girafe(code = print(state_electoral_number_plot), 
-                  width_svg=10,
-                  height_svg= 6,
-                  options = list(opts_toolbar(saveaspng = FALSE),
-                                 opts_sizing(rescale=T),
-                                 opts_tooltip(css="background-color:lightgray;	font-family:Roboto Condensed;")))
+my_plot <- girafe(
+  code = print(state_electoral_number_plot),
+  width_svg = 10,
+  height_svg = 6,
+  options = list(
+    opts_toolbar(saveaspng = FALSE),
+    opts_sizing(rescale = T),
+    opts_tooltip(css = "background-color:lightgray;	font-family:Roboto Condensed;")
+  )
+)
 my_plot
 
-x <- girafe_options(x = my_plot,
-                    sizingPolicy(padding = "0px"))
+x <- girafe_options(
+  x = my_plot,
+  sizingPolicy(padding = "0px")
+)
 
-saveWidget(x, file="state_electoral_number_plot.html",
-           background = "white")
+saveWidget(x,
+  file = "state_electoral_number_plot.html",
+  background = "white"
+)
 
 
 
@@ -1565,68 +1677,84 @@ library(reldist)
 
 
 # > plot --------------------------------------------------------------------
- 
+
 plot_gini <- df %>%
-  filter(party3!="Other") %>% 
+  filter(party3 != "Other") %>%
   filter(!(district_type == "Bundeswahlkreis" & district != "Gesamt")) %>%
-  left_join(., info_constituencies, by=c("district")) %>% 
+  left_join(., info_constituencies, by = c("district")) %>%
   filter(!is.na(pref_votes_abs)) %>%
   group_by(district_type, state, district_name_short, party3) %>%
   summarise(gini_pref = gini(pref_votes_abs)) %>%
   ggplot() +
-  labs(title = "Concentration of preference votes",
-       caption=my_caption_2,
-       y="Gini coefficient") +
-  geom_point_interactive(aes(x=party3,
-                             y=gini_pref,
-                             color=party3,
-                             tooltip=paste(district_name_short, "\n",
-                                           party3, round(gini_pref, 2))
+  labs(
+    title = "Concentration of preference votes",
+    caption = my_caption_2,
+    y = "Gini coefficient"
+  ) +
+  geom_point_interactive(aes(
+    x = party3,
+    y = gini_pref,
+    color = party3,
+    tooltip = paste(
+      district_name_short, "\n",
+      party3, round(gini_pref, 2)
+    )
   ),
-  pos=position_jitter(width=0.2, height=NULL, seed=2))+
+  pos = position_jitter(width = 0.2, height = NULL, seed = 2)
+  ) +
   geom_boxplot(aes(
     x = party3,
     y = gini_pref
   ),
-  fill="transparent",
-  outlier.shape=NA
+  fill = "transparent",
+  outlier.shape = NA
   ) +
-  scale_color_manual(values=party_colors)+
-  scale_x_discrete(expand=expansion(mult=0))+
-  scale_y_continuous(labels = scales::label_comma(),
-                     limits=c(0, 1),
-                     expand=expansion(mult=0),
-                     minor_breaks=NULL)+
-  facet_wrap(vars(district_type))+
+  scale_color_manual(values = party_colors) +
+  scale_x_discrete(expand = expansion(mult = 0)) +
+  scale_y_continuous(
+    labels = scales::label_comma(),
+    limits = c(0, 1),
+    expand = expansion(mult = 0),
+    minor_breaks = NULL
+  ) +
+  facet_wrap(vars(district_type)) +
   hrbrthemes::theme_ipsum_rc() +
   theme(
     axis.title.x = element_blank(),
     panel.grid.major.x = element_blank(),
     strip.text.y = element_text(angle = 0, vjust = 1),
     legend.position = "none",
-    plot.caption=element_markdown(hjust=c(0, 1), color="grey30"),
-    plot.margin=margin(0, unit="cm")
-  )+
-  guides(color="none")
+    plot.caption = element_markdown(hjust = c(0, 1), color = "grey30"),
+    plot.margin = margin(0, unit = "cm")
+  ) +
+  guides(color = "none")
 
 
 # > save --------------------------------------------------------------------
 
 plot_gini
 
-my_plot <- girafe(code = print(plot_gini), 
-                  width_svg=10,
-                  height_svg= 6,
-                  options = list(opts_toolbar(saveaspng = FALSE),
-                                 opts_sizing(rescale=T),
-                                 opts_tooltip(css="background-color:lightgray;	font-family:Roboto Condensed;")))
+my_plot <- girafe(
+  code = print(plot_gini),
+  width_svg = 10,
+  height_svg = 6,
+  options = list(
+    opts_toolbar(saveaspng = FALSE),
+    opts_sizing(rescale = T),
+    opts_tooltip(css = "background-color:lightgray;	font-family:Roboto Condensed;")
+  )
+)
 my_plot
 
-x <- girafe_options(x = my_plot,
-                    sizingPolicy(padding = "0px"))
+x <- girafe_options(
+  x = my_plot,
+  sizingPolicy(padding = "0px")
+)
 
-saveWidget(x, file="concentration_preference_votes.html",
-           background = "white")
+saveWidget(x,
+  file = "concentration_preference_votes.html",
+  background = "white"
+)
 
 
 
@@ -1698,7 +1826,7 @@ ggsave(
 
 
 d <- df %>%
-  left_join(., info_constituencies, by=c("district")) %>% 
+  left_join(., info_constituencies, by = c("district")) %>%
   filter(!party3 == "Other") %>%
   filter(!(district_type == "Bundeswahlkreis" & district != "Gesamt")) %>%
   filter(!is.na(pref_votes_abs)) %>%
@@ -1708,15 +1836,15 @@ d <- df %>%
   mutate(sum_preference = sum(pref_votes_abs, na.rm = T)) %>%
   filter(index < 3) %>%
   mutate(share_pref = pref_votes_abs / sum_preference) %>%
-  mutate(indicator = district) #%>%
+  mutate(indicator = district) # %>%
 
-d <- d %>%   
-ggplot() +
+d <- d %>%
+  ggplot() +
   labs(
     title = "Lead",
     subtitle = "Lead in % of party's total number of preference votes",
-    x="Share of intra-party preference votes; leader and runners-up."
-    ) +
+    x = "Share of intra-party preference votes; leader and runners-up."
+  ) +
   # geom_point(aes(
   #   y = district_name_short,
   #   x = share_pref,
@@ -1729,9 +1857,9 @@ ggplot() +
     y = district_name_short,
     x = share_pref,
     shape = as_factor(index),
-    color=party3,
-    data_id=name_short,
-    tooltip=name_short,
+    color = party3,
+    data_id = name_short,
+    tooltip = name_short,
   ),
   stat = "identity"
   ) +
@@ -1741,9 +1869,11 @@ ggplot() +
     minor_breaks = NULL,
     breaks = seq(0, 1, .5)
   ) +
-  scale_shape_manual(labels=c("1"="leader", "2"="runners-up"),
-                     values=c(1, 2))+
-  scale_color_manual(values=party_colors)+
+  scale_shape_manual(
+    labels = c("1" = "leader", "2" = "runners-up"),
+    values = c(1, 2)
+  ) +
+  scale_color_manual(values = party_colors) +
   lemon::facet_rep_grid(
     cols = vars(party3),
     rows = vars(district_type),
@@ -1754,7 +1884,7 @@ ggplot() +
   ) +
   hrbrthemes::theme_ipsum_rc() +
   theme(
-    axis.text.x = element_text(angle = 90, hjust = 1, vjust=.5),
+    axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
     axis.title.y = element_blank(),
     panel.spacing.x = unit(0.1, "cm"),
     panel.spacing.y = unit(0.2, "cm"),
@@ -1762,28 +1892,38 @@ ggplot() +
     legend.position = "bottom",
     legend.title = element_blank(),
     legend.justification = "right"
-  )+
-    guides(color="none")
+  ) +
+  guides(color = "none")
 
 d
 
 
 # >> save ------------------------------------------------------------------
 
-my_plot <- girafe(code = print(d), 
-                  width_svg=8,
-                  height_svg= 12,
-                  options = list(opts_toolbar(saveaspng = FALSE),
-                                 opts_sizing(rescale=T)))
+my_plot <- girafe(
+  code = print(d),
+  width_svg = 8,
+  height_svg = 12,
+  options = list(
+    opts_toolbar(saveaspng = FALSE),
+    opts_sizing(rescale = T)
+  )
+)
 my_plot
 
-x <- girafe_options(x = my_plot,
-                    sizingPolicy(padding = "0px",
-                                 defaultWidth = "100%",
-                                 defaultHeight = "100%"))
+x <- girafe_options(
+  x = my_plot,
+  sizingPolicy(
+    padding = "0px",
+    defaultWidth = "100%",
+    defaultHeight = "100%"
+  )
+)
 
-saveWidget(x, file="pi_Difference_leading_runnersup_prefernece_votes.html",
-           background = "gray")
+saveWidget(x,
+  file = "pi_Difference_leading_runnersup_prefernece_votes.html",
+  background = "gray"
+)
 
 
 name <- "Difference_leading_runnersup_prefernece_votes"
@@ -1807,7 +1947,7 @@ ggsave(
 # INCLUDED difference leader - runnersup vs n mandates -----------------------------
 
 d1 <- df %>%
-  left_join(., info_constituencies, by=c("district")) %>% 
+  left_join(., info_constituencies, by = c("district")) %>%
   filter(!party3 == "Other") %>%
   filter(!(district_type == "Bundeswahlkreis" & district != "Gesamt")) %>%
   filter(!is.na(pref_votes_abs)) %>%
@@ -1817,67 +1957,94 @@ d1 <- df %>%
   mutate(sum_preference = sum(pref_votes_abs, na.rm = T)) %>%
   filter(index < 3) %>%
   mutate(share_pref = pref_votes_abs / sum_preference) %>%
-  mutate(indicator = district) %>% 
-  select(district_type, state, district, party3, name_short, district_name, n_mandates, district_name_short, 
-         indicator, share_pref, index) %>% 
-  group_by(district_type, state, district, party3, district_name, district_name_short, indicator) %>% 
-  mutate(runners_up=lead(name_short),
-         runners_up_share=lead(share_pref)) %>% 
-  rename(leader=name_short,
-         leader_share=share_pref) %>% 
-  filter(index==1) %>% 
-  mutate(share_diff=leader_share-runners_up_share) %>% 
-  ungroup() %>% 
-  mutate(n_mandates=fct_reorder(as_factor(n_mandates), as.numeric(n_mandates)))
+  mutate(indicator = district) %>%
+  select(
+    district_type, state, district, party3, name_short, district_name, n_mandates, district_name_short,
+    indicator, share_pref, index
+  ) %>%
+  group_by(district_type, state, district, party3, district_name, district_name_short, indicator) %>%
+  mutate(
+    runners_up = lead(name_short),
+    runners_up_share = lead(share_pref)
+  ) %>%
+  rename(
+    leader = name_short,
+    leader_share = share_pref
+  ) %>%
+  filter(index == 1) %>%
+  mutate(share_diff = leader_share - runners_up_share) %>%
+  ungroup() %>%
+  mutate(n_mandates = fct_reorder(as_factor(n_mandates), as.numeric(n_mandates)))
 
-plot_difference <- d1 %>% 
-  ggplot()+
-  labs(title="Difference between top-2 candidates' preference vote share by constituency list",
-       y="Differnce between top-2 candidates' preference vote share",
-       caption=my_caption_2)+
-  geom_point_interactive(aes(x=party3,
-                       y=share_diff,
-                       color=party3,
-                       tooltip=paste(district_name_short, "\n",
-                                     leader, round(leader_share*100, 2), "%", "\n",
-                                     runners_up, round(runners_up_share*100, 2), "%", "\n")
-                       ),
-             pos=position_jitter(width=0.2, height=NULL, seed=2))+
-  geom_boxplot(aes(x=party3,
-                   y=share_diff),
-               fill="transparent",
-               outlier.shape = NA)+
-  scale_y_continuous(limits=c(0, 1),
-                     labels=scales::label_percent())+
-  scale_color_manual(values=party_colors)+
-  facet_wrap(vars(district_type))+
-  hrbrthemes::theme_ipsum_rc()+
-  theme(plot.title = element_text(size=12),
-        plot.title.position = "plot",
-        legend.position = "none",
-        plot.caption = element_markdown(hjust=c(0, 1)),
-        axis.title.x = element_blank(),
-        plot.margin = margin(0, unit="cm"),
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor.y = element_blank())
-  
+plot_difference <- d1 %>%
+  ggplot() +
+  labs(
+    title = "Difference between top-2 candidates' preference vote share by constituency list",
+    y = "Differnce between top-2 candidates' preference vote share",
+    caption = my_caption_2
+  ) +
+  geom_point_interactive(aes(
+    x = party3,
+    y = share_diff,
+    color = party3,
+    tooltip = paste(
+      district_name_short, "\n",
+      leader, round(leader_share * 100, 2), "%", "\n",
+      runners_up, round(runners_up_share * 100, 2), "%", "\n"
+    )
+  ),
+  pos = position_jitter(width = 0.2, height = NULL, seed = 2)
+  ) +
+  geom_boxplot(aes(
+    x = party3,
+    y = share_diff
+  ),
+  fill = "transparent",
+  outlier.shape = NA
+  ) +
+  scale_y_continuous(
+    limits = c(0, 1),
+    labels = scales::label_percent()
+  ) +
+  scale_color_manual(values = party_colors) +
+  facet_wrap(vars(district_type)) +
+  hrbrthemes::theme_ipsum_rc() +
+  theme(
+    plot.title = element_text(size = 12),
+    plot.title.position = "plot",
+    legend.position = "none",
+    plot.caption = element_markdown(hjust = c(0, 1)),
+    axis.title.x = element_blank(),
+    plot.margin = margin(0, unit = "cm"),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.y = element_blank()
+  )
+
 
 
 # >> save ------------------------------------------------------------------
 
-my_plot <- girafe(code = print(plot_difference), 
-                  width_svg=10,
-                  height_svg= 6,
-                  options = list(opts_toolbar(saveaspng = FALSE),
-                                 opts_sizing(rescale=T),
-                                 opts_tooltip(css="background-color:lightgray;	font-family:Roboto Condensed;")))
+my_plot <- girafe(
+  code = print(plot_difference),
+  width_svg = 10,
+  height_svg = 6,
+  options = list(
+    opts_toolbar(saveaspng = FALSE),
+    opts_sizing(rescale = T),
+    opts_tooltip(css = "background-color:lightgray;	font-family:Roboto Condensed;")
+  )
+)
 my_plot
 
-x <- girafe_options(x = my_plot,
-                    sizingPolicy(padding = "0px"))
+x <- girafe_options(
+  x = my_plot,
+  sizingPolicy(padding = "0px")
+)
 
-saveWidget(x, file="candidate_vote_share_difference.html",
-           background = "white")
+saveWidget(x,
+  file = "candidate_vote_share_difference.html",
+  background = "white"
+)
 
 
 # NOT INCLUDED. Identify candidates which were 'upgrades' -----------------------------------------------------
@@ -1904,31 +2071,3 @@ upgrades <- df_comb %>%
   group_by(district_type, district, district_name, party3, upgrade) %>%
   summarise(n_upgrades = n()) %>%
   filter(upgrade == "yes")
-
-# what if candidate who crosses threshold was actually on list no 1; then no upgrade.
-
-upgrades %>%
-  ggplot() +
-  geom_bar(aes(
-    x = party3,
-    fill = party3
-  ),
-  stat = "count"
-  ) +
-  scale_fill_manual(values = party_colors) +
-  hrbrthemes::theme_ipsum_rc() +
-  facet_wrap(vars(district_name))
-
-
-df_comb %>%
-  group_by(party3, district_type, upgrade) %>%
-  summarise(n_upgrades = n()) %>%
-  filter(upgrade == "yes") %>%
-  arrange(desc(n_upgrades))
-
-
-df_upgraders <- df_comb %>%
-  filter(upgrade == "yes")
-
-
-
