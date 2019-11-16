@@ -573,7 +573,8 @@ time <- Sys.Date()
 folder <- paste0(wdr, "/graphs/")
 width <- 26.49
 height <- 11.17
-ggsave(filename = paste0(folder, time, name, format),
+ggsave(#plot=plot_n_candidates_crossing_threshold,
+       filename = paste0(folder, time, name, format),
        device = "png",
        dpi=96,
        type = "cairo",
@@ -616,7 +617,7 @@ nrw19 <- nrw19_imp %>%
     str_detect(gkz, regex("99$")) ~ "ja",
     TRUE ~ as.character("nein")
   ))  %>%
-select(level, district_name=gebietsname, gkz,  electorate_size=wahlberechtigte,
+select(level, district_name, gkz,  electorate_size=wahlberechtigte,
        votes_mail=wahlkarten, state, votes_casted=abgegebene, district_pol, 
        municipality, everything())
 
@@ -652,7 +653,7 @@ results_federal_list_long <- results_federal_list %>%
 results_state_list <- nrw19 %>%
   filter(level == "Bundesland") %>%
   group_by(state) %>%
-  summarise_if(is.numeric, sum, na.rm=T) %>%
+  summarise_at(vars(electorate_size:slp), sum) %>%
   mutate(district_name = case_when(
     state == 1 ~ "Burgenland",
     state == 2 ~ "Kärnten",
@@ -780,14 +781,16 @@ results_regional_list_long <- results_regional_list_long %>%
     select(-Stimmbezirke, -Bezeichnung) %>%
     rename(
       district = Regionalwahlkreis,
+      # district_name=Bezeichung,
       n_mandates = Mandate
     ),
   by = c("district")
   )
 
 
+
 # bind results
-df_results <- bind_rows(results_federal_list_long, results_state_list_long, results_regional_list_long) %>%
+df_results <- bind_rows(bundeswahlkreis_long, results_state_list_long, results_regional_list_long) %>%
   filter(party %in% c("ovp", "spo", "fpo", "grune", "neos")) %>%
   mutate(party = case_when(
     party == "ovp" ~ "ÖVP",
@@ -821,6 +824,9 @@ df_comb <- left_join(df %>% select(district_type, district, party3, name, name_s
 df_results %>% rename(party_votes = votes_abs),
 by = c("district_type" = "district_type", "district" = "district", "party3" = "party")
 )
+
+
+
 
 
 
@@ -874,7 +880,7 @@ u <- dplyr::left_join(u,
 
 
 
-# not included: Parties' preference vote share (facet grid)  -----------------------------------------------------
+# plot 3 / facet grid -----------------------------------------------------
 
 u %>%
   ggplot() +
@@ -902,7 +908,11 @@ u %>%
     space = "free",
     switch = "y"
   ) +
-    hrbrthemes::theme_ipsum_rc() +
+  # ggforce::facet_row(vars(state),
+  #                    scales="free_x",
+  #                    space="free",
+  #                    labeller=as_labeller(labeller_bld))+
+  hrbrthemes::theme_ipsum_rc() +
   theme(
     axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0),
     legend.position = "none",
@@ -913,7 +923,7 @@ u %>%
     panel.spacing = unit(0.05, "cm")
   )
 
-name <- "Parties_preference_vote_share_NOT_INCLUDED_IN_BLOG"
+name <- "Preference_votes_vs_party_votes"
 format <- ".png"
 time <- Sys.Date()
 folder <- paste0(wdr, "/graphs/")
@@ -930,7 +940,7 @@ ggsave(
 )
 
 
-# not incldued: Parties' preference vote share (boxplot) ---------------------------------------------------------------
+# > boxplot party ---------------------------------------------------------------
 
 pos <- position_jitter(width = 0.2, height = 0, seed = 1) # define seed for positioning
 
@@ -984,7 +994,7 @@ u %>%
   )
 
 
-name <- "Parties_preference_vote_share_boxplot_NOT_INCLUDED_IN_BLOG"
+name <- "Preference_votes_vs_party_votes_boxplot_party "
 format <- ".png"
 time <- Sys.Date()
 folder <- paste0(wdr, "/graphs/")
@@ -1000,10 +1010,11 @@ ggsave(
   unit = c("cm")
 )
 
-# INCLUDED  Parties' preference vote share by Party  ------------------------------------------------------
+# > * boxplot state ------------------------------------------------------
 
 pos <- position_jitter(width = 0.2, height = 0, seed = 1) # define seed for positioning
 
+levels(x$state)
 
 plot_region <- u %>%
   group_by(state) %>%
@@ -1075,7 +1086,9 @@ my_plot <- girafe(code = print(plot_region),
 my_plot
 
 x <- girafe_options(x = my_plot,
-                    sizingPolicy(padding = "0px"))
+                    sizingPolicy(padding = "0px",
+                                 defaultWidth = "100%",
+                                 defaultHeight = "100%"))
 
 saveWidget(x, file="party_prefence_share_by_state.html",
            selfcontained = T,
@@ -1099,7 +1112,7 @@ ggsave(
 )
 
 
-# INCLUDED: Party preference vote share by district magnitude -----------------------------------------------------
+# * share and district magnitude -----------------------------------------------------
 
 pos <- position_jitter(width = 0.2, height = 0, seed = 1) # define seed for positioning
 
@@ -1200,8 +1213,7 @@ x <- girafe_options(x = my_plot,
 saveWidget(x, file="plot_interactive_n_mandates.html",
            background = "white")
 
-
-# INCLUDED Candidate's preference votes share by list  ------------------------------------------
+# top preference vote candidates ------------------------------------------
 
 share <- df %>%
   filter(!party3 == "Other") %>%
@@ -1227,78 +1239,84 @@ df_thresholds <- tibble::tribble(
 df_thresholds_2 <- crossing(df_thresholds, unique(share$party3)) %>% 
   rename(party3=`unique(share$party3)`)
 
+#continue here; revert to scale_x_continuous?
+#add indicator for those candidates who are upgraded due to wahlzahl (check)
+
+
 pos <- position_jitter(width=0, height=0.2, seed=2)
 
-# plot_share <- share %>%   
-#   mutate(share_pref=share_pref*100) %>% 
-#   ggplot() +
-#   labs(
-#     title = "Top candidates with prefernce votes per constituency",
-#     subtitle = "",
-#     x="Candidate's preference votes in % of party votes"
-#   ) +
-#   # geom_point(aes(
-#   #   y = district_name_short,
-#   #   x = share_pref,
-#   #   color=party3
-#   # ),
-#   # stat = "identity",
-#   # position=pos
-#   # ) +
-#   geom_point_interactive(aes(
-#     y = district_name_short,
-#     x = share_pref,
-#  #   shape = as_factor(index),
-#     color=party3,
-#     data_id=name_short,
-#     tooltip=name_short,
-#   ),
-#   position=position_jitter(width=0, height=0.2, seed=2),
-#   stat = "identity"
-#   ) +
-#   geom_vline(data=df_thresholds_2,
-#              aes(xintercept = threshold * 100),
-#              color="orange")+
-#   scale_x_continuous(
-#     trans="log10",
-#     limits = c(NA, 100),
-#     labels = scales::percent_format(accuracy = 1, scale = 1),
-#     minor_breaks = NULL,
-#     breaks = c(NA, 0, 1, 5, 10, 25, 50, 100)
-#   ) +
-#   # scale_shape_manual(labels=c("1"="leader", "2"="runners-up"),
-#   #                    values=c(1, 2))+
-#   scale_color_manual(values=party_colors)+
-#   lemon::facet_rep_grid(
-#     cols = vars(party3),
-#     rows = vars(district_type),
-#     repeat.tick.labels = F,
-#     scales = "free",
-#     space = "free",
-#     switch="y",
-#     drop = T
-#   ) +
-#   hrbrthemes::theme_ipsum_rc() +
-#   theme(
-#     axis.text.x = element_text(angle = 90, hjust = 1, vjust=.5),
-#     axis.title.y = element_blank(),
-#     panel.spacing.x = unit(0.2, "cm"),
-#     panel.spacing.y = unit(0.2, "cm"),
-#     strip.text.x = element_text(angle = 0, 
-#                                 vjust = 1,
-#                                 face="bold"),
-#     strip.text.y = element_text(angle = 180, 
-#                                 vjust = 1,
-#                                 face="bold"),
-#     strip.placement = "outside",
-#     legend.position = "bottom",
-#     legend.title = element_blank(),
-#     legend.justification = "right",
-#     panel.grid.major.y = element_blank()
-#   )+
-#   guides(color="none")
+plot_share <- share %>%   
+  mutate(share_pref=share_pref*100) %>% 
+  ggplot() +
+  labs(
+    title = "Top candidates with prefernce votes per constituency",
+    subtitle = "",
+    x="Candidate's preference votes in % of party votes"
+  ) +
+  # geom_point(aes(
+  #   y = district_name_short,
+  #   x = share_pref,
+  #   color=party3
+  # ),
+  # stat = "identity",
+  # position=pos
+  # ) +
+  geom_point_interactive(aes(
+    y = district_name_short,
+    x = share_pref,
+ #   shape = as_factor(index),
+    color=party3,
+    data_id=name_short,
+    tooltip=name_short,
+  ),
+  position=position_jitter(width=0, height=0.2, seed=2),
+  stat = "identity"
+  ) +
+  geom_vline(data=df_thresholds_2,
+             aes(xintercept = threshold * 100),
+             color="orange")+
+  scale_x_continuous(
+    trans="log10",
+    limits = c(NA, 100),
+    labels = scales::percent_format(accuracy = 1, scale = 1),
+    minor_breaks = NULL,
+    breaks = c(NA, 0, 1, 5, 10, 25, 50, 100)
+  ) +
+  # scale_shape_manual(labels=c("1"="leader", "2"="runners-up"),
+  #                    values=c(1, 2))+
+  scale_color_manual(values=party_colors)+
+  lemon::facet_rep_grid(
+    cols = vars(party3),
+    rows = vars(district_type),
+    repeat.tick.labels = F,
+    scales = "free",
+    space = "free",
+    switch="y",
+    drop = T
+  ) +
+  hrbrthemes::theme_ipsum_rc() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1, vjust=.5),
+    axis.title.y = element_blank(),
+    panel.spacing.x = unit(0.2, "cm"),
+    panel.spacing.y = unit(0.2, "cm"),
+    strip.text.x = element_text(angle = 0, 
+                                vjust = 1,
+                                face="bold"),
+    strip.text.y = element_text(angle = 180, 
+                                vjust = 1,
+                                face="bold"),
+    strip.placement = "outside",
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    legend.justification = "right",
+    panel.grid.major.y = element_blank()
+  )+
+  guides(color="none")
 
-# * plot with patchwork ------------------------------------------------------
+hr <- hrbrthemes::theme_ipsum_rc()
+
+# * plot with function ------------------------------------------------------
 
 
 df_share <- share %>%   
@@ -1371,11 +1389,12 @@ group_split(district_type) %>%
   )+
   guides(color="none"))
 
+plot_share
 
 plot_share <- (patchwork::wrap_plots(plot_share, ncol=1) &
   theme(plot.margin = margin(unit="cm", 0))) +
   plot_annotation(title="Candidates' preference vote shares",
-                  subtitle = "Candidates above vertical line move up the ",
+                  subtitle = "Candidates above vertical line move up the "
                   caption=my_caption,
                   theme=theme(plot.title = element_text(family="Roboto Condensed",
                                                         size = 12,
@@ -1384,6 +1403,7 @@ plot_share <- (patchwork::wrap_plots(plot_share, ncol=1) &
   
 
 plot_share
+
 
 name <- "Share_preferencve_votes_vs_party_votes"
 format <- ".png"
@@ -1418,10 +1438,6 @@ saveWidget(x, file="candidate_vote_share_by_list.html",
            background = "white")
 
 
-
-# Candidates crossing threshold -------------------------------------------
-
-
 plot_n_candidates_crossing_threshold <- df_share %>% 
   select(district_type, district_name_short, party3, share_pref, threshold) %>% 
   mutate(threshold_share=case_when(share_pref>threshold*100 ~ "yes",
@@ -1453,8 +1469,6 @@ plot_n_candidates_crossing_threshold <- df_share %>%
         plot.title.position = "plot",
         plot.caption = element_markdown(hjust = c(0,1))
         )
-
-plot_n_candidates_crossing_threshold
 
 name <- "n_candidates_crossing_threshold"
 format <- ".png"
