@@ -418,7 +418,7 @@ df_rank_diff_long <- rank_diff %>%
 #   facet_grid(rows = vars(party3), cols = vars(district_type))
 
 
-# * Composition of preferential votes ---------------------------------------
+# INCLUDED Composition of preferential votes ---------------------------------------
 
 df_list <- df %>%
   filter(!(district_type == "Bundeswahlkreis" & district != "Gesamt")) %>%
@@ -505,7 +505,7 @@ ggsave(#plot=plot_n_candidates_crossing_threshold,
 )
 
 
-# * Preference votes per party and district list -------------------------------------------------------------
+# INCLUDED Preference votes per party and district list -------------------------------------------------------------
 
 x <- df %>%
   filter(!(district_type == "Bundeswahlkreis" & district != "Gesamt")) %>%
@@ -674,7 +674,7 @@ results_state_list_long <- results_state_list %>%
 
 
 
-# get details on electoral districts/constituencies -----------------------
+# >> details on electoral districts/constituencies -----------------------
 
 library(rvest)
 
@@ -731,7 +731,7 @@ info_constituencies <-  dplyr::bind_rows(
   select(., -state) %>% 
   bind_rows(., data.frame(district="Gesamt", district_name="Gesamt", n_mandates=183, district_name_short="Gesamt"))
 
-# >>> Get 'electoral number' --------------------------------------------------
+# >> get 'electoral number' --------------------------------------------------
 
 electoral_number <- left_join(results_state_list %>%
   select(state, district_name, district, gultige),
@@ -747,7 +747,7 @@ results_state_list_long <- left_join(results_state_list_long,
 )
 
 
-# > #regional level -------------------------------------------------------
+# > regional level -------------------------------------------------------
 
 results_regional_list <- nrw19 %>%
   mutate(district_name = str_remove_all(district_name, "Wahlkarten") %>%
@@ -810,8 +810,6 @@ df_results <- bind_rows(results_federal_list_long, results_state_list_long, resu
     district == "00" ~ "Gesamt",
     TRUE ~ as.character(district)
   ))
-
-# > bind results ----------------------------------------------------------
 
 # merge results of preference votes with parties' overall results.
 df_comb <- left_join(df %>% select(district_type, district, party3, name, name_short, name_orig,
@@ -1298,7 +1296,7 @@ pos <- position_jitter(width=0, height=0.2, seed=2)
 #   )+
 #   guides(color="none")
 
-# * plot with patchwork ------------------------------------------------------
+# > plot with patchwork ------------------------------------------------------
 
 
 df_share <- share %>%   
@@ -1419,7 +1417,7 @@ saveWidget(x, file="candidate_vote_share_by_list.html",
 
 
 
-# Candidates crossing threshold -------------------------------------------
+# INCLUDED. Candidates crossing preference vote threshold -------------------------------------------
 
 
 plot_n_candidates_crossing_threshold <- df_share %>% 
@@ -1473,7 +1471,7 @@ ggsave(plot=plot_n_candidates_crossing_threshold,
   unit = c("cm")
 )
 
-# *electoral number and preference votes -----------------------------------
+# INCLUDED candidates crossing electoral number with preference votes (geofacet) -----------------------------------
 library(geofacet)
 
 aut_grid <- data.frame(
@@ -1482,7 +1480,9 @@ aut_grid <- data.frame(
   code = c("Oberösterreich", "Niederösterreich", "Wien", "Vorarlberg", "Tirol", "Salzburg", "Steiermark", "Burgenland", "Kärnten"),
   name = c("Oberösterreich", "Niederösterreich", "Wien", "Vorarlberg", "Tirol", "Salzburg", "Steiermark", "Burgenland", "Kärnten"))
 
-geofacet::grid_preview(aut_grid)
+
+
+# > plot ------------------------------------------------------------------
 
 
 state_electoral_number<- df %>% 
@@ -1493,8 +1493,6 @@ state_electoral_number<- df %>%
             by=c("district"="district_name")) %>% 
   select(district_type, district, name_short, party3, electoral_number, pref_votes_abs)
 
-state_electoral_number
-  
 state_electoral_number_plot <- state_electoral_number %>% 
 ggplot()+
   labs(title="Candidates' preference votes and electoral number",
@@ -1540,6 +1538,9 @@ ggplot()+
   facet_geo(~district, grid=aut_grid)+
   guides(color="none")
 
+
+# > save ------------------------------------------------------------------
+
 state_electoral_number_plot
 
 my_plot <- girafe(code = print(state_electoral_number_plot), 
@@ -1553,18 +1554,18 @@ my_plot
 x <- girafe_options(x = my_plot,
                     sizingPolicy(padding = "0px"))
 
-x
 saveWidget(x, file="state_electoral_number_plot.html",
            background = "white")
 
 
 
-
-
-# * gini ------------------------------------------------------------------
+# INCLUDED Concentratin of preference votes (gini) ------------------------------------------------------------------
 
 library(reldist)
 
+
+# > plot --------------------------------------------------------------------
+ 
 plot_gini <- df %>%
   filter(party3!="Other") %>% 
   filter(!(district_type == "Bundeswahlkreis" & district != "Gesamt")) %>%
@@ -1608,6 +1609,9 @@ plot_gini <- df %>%
   )+
   guides(color="none")
 
+
+# > save --------------------------------------------------------------------
+
 plot_gini
 
 my_plot <- girafe(code = print(plot_gini), 
@@ -1646,51 +1650,51 @@ ggsave(
 
 
 
-# competitveness ----------------------------------------------------------
+# INCLUDED Competitiveness  ----------------------------------------------------------
 
 
-# > difference as share of total preference votes -------------------------
+# > NOT INCLUDED: Difference as share of total preference votes -------------------------
 
-df %>%
-  filter(!(district_type == "Bundeswahlkreis" & district != "Gesamt")) %>%
-  # filter(district=="Gesamt") %>%
-  filter(!is.na(pref_votes_abs)) %>%
-  group_by(district_type, state, district, party3) %>%
-  arrange(desc(pref_votes_abs), .by_group = T) %>%
-  mutate(index = row_number()) %>%
-  mutate(sum_preference = sum(pref_votes_abs, na.rm = T)) %>%
-  filter(index < 3) %>%
-  mutate(pref_diff = pref_votes_abs - lead(pref_votes_abs)) %>%
-  mutate(diff_perc = pref_diff / sum_preference) %>%
-  filter(!is.na(diff_perc)) %>%
-  mutate(indicator = paste0(district, "-", name_short)) %>%
-  mutate(indicator = district) %>%
-  ggplot() +
-  labs(
-    title = "Lead",
-    subtitle = "Lead in % of party's total number of preference votes"
-  ) +
-  geom_bar(aes(
-    y = indicator,
-    x = diff_perc
-  ),
-  stat = "identity"
-  ) +
-  lemon::facet_rep_grid(
-    cols = vars(party3),
-    rows = vars(district_type),
-    # repeat.tick.labels = T,
-    scales = "free",
-    drop = T,
-    space = "free"
-  ) +
-  hrbrthemes::theme_ipsum_rc() +
-  theme(axis.text.x = element_text(angle = 90))
-
-
+# df %>%
+#   filter(!(district_type == "Bundeswahlkreis" & district != "Gesamt")) %>%
+#   # filter(district=="Gesamt") %>%
+#   filter(!is.na(pref_votes_abs)) %>%
+#   group_by(district_type, state, district, party3) %>%
+#   arrange(desc(pref_votes_abs), .by_group = T) %>%
+#   mutate(index = row_number()) %>%
+#   mutate(sum_preference = sum(pref_votes_abs, na.rm = T)) %>%
+#   filter(index < 3) %>%
+#   mutate(pref_diff = pref_votes_abs - lead(pref_votes_abs)) %>%
+#   mutate(diff_perc = pref_diff / sum_preference) %>%
+#   filter(!is.na(diff_perc)) %>%
+#   mutate(indicator = paste0(district, "-", name_short)) %>%
+#   mutate(indicator = district) %>%
+#   ggplot() +
+#   labs(
+#     title = "Lead",
+#     subtitle = "Lead in % of party's total number of preference votes"
+#   ) +
+#   geom_bar(aes(
+#     y = indicator,
+#     x = diff_perc
+#   ),
+#   stat = "identity"
+#   ) +
+#   lemon::facet_rep_grid(
+#     cols = vars(party3),
+#     rows = vars(district_type),
+#     # repeat.tick.labels = T,
+#     scales = "free",
+#     drop = T,
+#     space = "free"
+#   ) +
+#   hrbrthemes::theme_ipsum_rc() +
+#   theme(axis.text.x = element_text(angle = 90))
 
 
-# > difference % leader vs runers-up ---------------------------------------------------
+
+
+# > INCLUDED: Difference % leader vs runers-up ---------------------------------------------------
 
 
 d <- df %>%
@@ -1763,6 +1767,9 @@ ggplot() +
 
 d
 
+
+# >> save ------------------------------------------------------------------
+
 my_plot <- girafe(code = print(d), 
                   width_svg=8,
                   height_svg= 12,
@@ -1797,7 +1804,7 @@ ggsave(
 
 
 
-# * difference leader - runnersup vs n mandates -----------------------------
+# INCLUDED difference leader - runnersup vs n mandates -----------------------------
 
 d1 <- df %>%
   left_join(., info_constituencies, by=c("district")) %>% 
@@ -1823,9 +1830,6 @@ d1 <- df %>%
   ungroup() %>% 
   mutate(n_mandates=fct_reorder(as_factor(n_mandates), as.numeric(n_mandates)))
 
-levels(d1$n_mandates)
-  
-  
 plot_difference <- d1 %>% 
   ggplot()+
   labs(title="Difference between top-2 candidates' preference vote share by constituency list",
@@ -1859,6 +1863,8 @@ plot_difference <- d1 %>%
   
 
 
+# >> save ------------------------------------------------------------------
+
 my_plot <- girafe(code = print(plot_difference), 
                   width_svg=10,
                   height_svg= 6,
@@ -1874,7 +1880,7 @@ saveWidget(x, file="candidate_vote_share_difference.html",
            background = "white")
 
 
-# identify upgrades -----------------------------------------------------
+# NOT INCLUDED. Identify candidates which were 'upgrades' -----------------------------------------------------
 
 # calculate share of preference votes from votes per constituency level
 df_comb <- df_comb %>%
@@ -1926,32 +1932,3 @@ df_upgraders <- df_comb %>%
 
 
 
-# checks ------------------------------------------------------------------
-
-x <- df %>%
-  filter(str_detect(name, "Lercher|Wagner")) %>%
-  distinct(name) %>%
-  # mutate(name2=str_extract(name, "(?<=Lercher).*")) %>%
-  # mutate(name3=str_extract(name, ".*(?=Maximilian)")) %>%
-  # mutate(name4=str_extract(name, ".*(?=,)")) %>%
-  # mutate(name5=str_remove_all(name, "\\s*(?=\\,)")) %>%
-  mutate(family_name = stringr::str_extract(name, "^.+(?=,)")) %>%
-  mutate(first_name = str_extract(name, regex("(?<=\\,).*$")) %>%
-    str_trim()) %>%
-  mutate(initals = str_split(first_name, "\\s") %>%
-    map(., str_sub, start = 1L, end = 1L) %>%
-    map_chr(., str_c, collapse = ".") %>%
-    paste0(., ".")) %>%
-  mutate(name_short = paste(family_name, initals, sep = ", "))
-x
-
-unique_names <- df %>%
-  mutate(first_name = stringr::word(name)) %>%
-  group_by(first_name) %>%
-  summarise(unique_names = length(unique(name))) %>%
-  filter(unique_names > 1)
-unique_names$first_name
-
-x <- df %>%
-  mutate(first_name = stringr::word(name)) %>%
-  filter(first_name %in% unique_names$first_name)
