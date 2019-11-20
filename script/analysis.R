@@ -120,8 +120,14 @@ df_merge <- bind_rows(
   df_state_region_long,
   df_federal_clean
 ) %>%
-  ungroup()
+  ungroup() %>% 
+  filter(!is.na(name))
 
+write.csv2(df_merge,
+           file = paste0(wdr, "/data/AUT_NRW19_preference_votes.csv"),
+           row.names = F,
+           fileEncoding = "latin1"
+)
 
 
 fn_remove_titles <- function(x) {
