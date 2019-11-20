@@ -71,8 +71,8 @@ df_state_region_long <- df_state_region %>%
   rename(
     name = familien_vorname,
     pref_votes_abs = vorz_stimm,
-    district_type = district_type,
-    district = district,
+    # district_type = district_type,
+    # district = district,
     rank_list = reihung,
     birth_year = geb_jahr,
   ) %>%
@@ -240,7 +240,7 @@ df <- df %>%
 # ANALYSIS ----------------------------------------------------------------
 
 
-# top 5 candidates per party ----------------------------------------------
+# INCLUDED top 5 candidates per party ----------------------------------------------
 
 top_candidates <- df %>%
   # filter(party2 %in% main_parties) %>%
@@ -352,7 +352,7 @@ Hofer <- df %>%
   distinct(name_orig, district_type, district)
 
 
-# top per district_type (not included) -----------------------------------------------------------
+# INCLUDED top per district_type (not included) -----------------------------------------------------------
 
 fn_top_plot <- function(x) {
   x %>%
@@ -597,6 +597,8 @@ ggsave(
   scale = 1,
   unit = c("cm")
 )
+
+
 
 
 
